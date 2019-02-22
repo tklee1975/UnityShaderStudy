@@ -1,0 +1,65 @@
+﻿Shader "ShaderTest/GlowingShader"
+{
+	Properties
+	{
+		_Speed ("Speed", Range(1,30)) = 5
+		_Intensity ("Intensity", Range(0.1, 2)) = 0.5
+		[PerRendererData]_MainTex ("Texture Input",2D) = "white" {}
+	}
+	SubShader
+	{
+		Tags { "RenderType"="Opaque" }
+		LOD 100
+		Blend SrcAlpha OneMinusSrcAlpha
+
+		Pass
+		{
+			CGPROGRAM
+			#pragma vertex vert
+			#pragma fragment frag
+			#include "UnityCG.cginc"
+
+			struct appdata
+			{
+				float4 vertex : POSITION;
+				float2 uv : TEXCOORD0;
+				float4 color : COLOR;
+			};
+
+			struct v2f
+			{
+				float4 vertex : SV_POSITION;
+				float2 uv : TEXCOORD0;
+				float color : COLOR;
+			};
+
+			sampler2D _MainTex;
+			float4 _MainTex_ST;
+			float _Intensity;
+			float _Speed;
+
+			v2f vert (appdata v)
+			{
+				v2f o;
+				o.vertex = UnityObjectToClipPos(v.vertex);
+				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+				o.color = v.color;		// 
+				return o;
+			}
+			
+			fixed4 frag (v2f i) : SV_Target
+			{
+				float sinRatio = (sin(_Time * _Speed) + 1)/2;		// Sin give value -1 ~ 1, sinRatio: 0 ~ 1
+				float plusIntensity = _Intensity * sinRatio;
+
+
+				fixed4 col = tex2D(_MainTex, i.uv);
+
+				col *= (1 + plusIntensity);
+
+				return col;
+			}
+			ENDCG
+		}
+	}
+}
